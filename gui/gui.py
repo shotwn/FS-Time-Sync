@@ -1,7 +1,19 @@
+import os
+import sys
+
 from PySide2.QtWidgets import QApplication
 from PySide2.QtGui import QIcon
 
 from gui.mainwindow import MainWindow
+
+
+def resource_path(relative_path):
+    """
+    Get absolute path to resource, works for dev and for PyInstaller
+    https://stackoverflow.com/questions/7674790/bundling-data-files-with-pyinstaller-onefile/7675014#7675014
+    """
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    return os.path.join(base_path, relative_path)
 
 
 class GUI:
@@ -9,9 +21,10 @@ class GUI:
         self.root = root
         self.app = QApplication([])
         self.icons = {
-            "timelapse": QIcon('icons/timelapse.png'),
-            "sync": QIcon('icons/sync.png'),
-            "sync_disabled": QIcon('icons/sync_disabled.png'),
+            "timelapse": QIcon(resource_path('icons/timelapse.png')),
+            "sync": QIcon(resource_path('icons/sync.png')),
+            "sync_disabled": QIcon(resource_path('icons/sync_disabled.png')),
+            "logo": QIcon(resource_path('icons/logo.png')),
         }
 
         self.main_window = MainWindow(self)

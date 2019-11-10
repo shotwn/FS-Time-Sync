@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'mainwindow.ui',
 # licensing of 'mainwindow.ui' applies.
 #
-# Created: Mon Nov 11 00:33:31 2019
+# Created: Mon Nov 11 02:40:11 2019
 #      by: pyside2-uic  running on PySide2 5.13.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -59,12 +59,14 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(15)
         self.sim_time_hour.setFont(font)
+        self.sim_time_hour.setText("")
         self.sim_time_hour.setObjectName("sim_time_hour")
         self.sim_date = QtWidgets.QLabel(self.centralwidget)
         self.sim_date.setGeometry(QtCore.QRect(411, 31, 81, 13))
         font = QtGui.QFont()
         font.setPointSize(9)
         self.sim_date.setFont(font)
+        self.sim_date.setText("")
         self.sim_date.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.sim_date.setObjectName("sim_date")
         self.left_status = QtWidgets.QLabel(self.centralwidget)
@@ -110,12 +112,14 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(15)
         self.sim_time_minute.setFont(font)
+        self.sim_time_minute.setText("")
         self.sim_time_minute.setObjectName("sim_time_minute")
         self.sim_time_seperator = QtWidgets.QLabel(self.centralwidget)
         self.sim_time_seperator.setGeometry(QtCore.QRect(451, 10, 5, 13))
         font = QtGui.QFont()
         font.setPointSize(12)
         self.sim_time_seperator.setFont(font)
+        self.sim_time_seperator.setText("")
         self.sim_time_seperator.setObjectName("sim_time_seperator")
         self.line = QtWidgets.QFrame(self.centralwidget)
         self.line.setGeometry(QtCore.QRect(320, 10, 1, 141))
@@ -136,7 +140,8 @@ class Ui_MainWindow(object):
         self.real_time_second.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.real_time_second.setObjectName("real_time_second")
         self.source_button_2 = QtWidgets.QToolButton(self.centralwidget)
-        self.source_button_2.setGeometry(QtCore.QRect(13, 112, 41, 13))
+        self.source_button_2.setGeometry(QtCore.QRect(11, 112, 41, 13))
+        self.source_button_2.setText("")
         self.source_button_2.setObjectName("source_button_2")
         self.right_status = QtWidgets.QLabel(self.centralwidget)
         self.right_status.setGeometry(QtCore.QRect(330, 121, 161, 20))
@@ -148,6 +153,7 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(8)
         self.sim_time_second.setFont(font)
+        self.sim_time_second.setText("")
         self.sim_time_second.setObjectName("sim_time_second")
         self.right_status_2 = QtWidgets.QLabel(self.centralwidget)
         self.right_status_2.setGeometry(QtCore.QRect(330, 135, 161, 20))
@@ -166,8 +172,6 @@ class Ui_MainWindow(object):
         self.utc_label.setToolTip(QtWidgets.QApplication.translate("MainWindow", "UTC.S : Using System Time", None, -1))
         self.utc_label.setText(QtWidgets.QApplication.translate("MainWindow", "UTC.S", None, -1))
         self.sim_label.setText(QtWidgets.QApplication.translate("MainWindow", "Waiting Simulator", None, -1))
-        self.sim_time_hour.setText(QtWidgets.QApplication.translate("MainWindow", "01", None, -1))
-        self.sim_date.setText(QtWidgets.QApplication.translate("MainWindow", "12.12.2019", None, -1))
         self.live_button.setToolTip(QtWidgets.QApplication.translate("MainWindow", "Live Sync: Disabled", None, -1))
         self.live_button.setText(QtWidgets.QApplication.translate("MainWindow", "Live Sync", None, -1))
         self.sync_button.setToolTip(QtWidgets.QApplication.translate("MainWindow", "Sync Now", None, -1))
@@ -176,9 +180,5 @@ class Ui_MainWindow(object):
         self.label_2.setText(QtWidgets.QApplication.translate("MainWindow", "Simulator", None, -1))
         self.real_time_minute.setText(QtWidgets.QApplication.translate("MainWindow", "30", None, -1))
         self.real_time_seperator.setText(QtWidgets.QApplication.translate("MainWindow", ":", None, -1))
-        self.sim_time_minute.setText(QtWidgets.QApplication.translate("MainWindow", "30", None, -1))
-        self.sim_time_seperator.setText(QtWidgets.QApplication.translate("MainWindow", ":", None, -1))
         self.real_time_second.setText(QtWidgets.QApplication.translate("MainWindow", "00", None, -1))
-        self.source_button_2.setText(QtWidgets.QApplication.translate("MainWindow", "Offset", None, -1))
-        self.sim_time_second.setText(QtWidgets.QApplication.translate("MainWindow", "00", None, -1))
 

@@ -1,3 +1,4 @@
+import sys
 import time
 import socket
 from datetime import datetime, timezone
@@ -104,9 +105,9 @@ class FSTimeSync:
 
     def start(self):
         try:
-            self.sync_thread = threading.Thread(None, self.sync_thread_runner, "Sync Thread", daemon=False)
+            self.sync_thread = threading.Thread(None, self.sync_thread_runner, "Sync Thread", daemon=True)
             self.sync_thread.start()
-            self.time_thread = threading.Thread(None, self.time_thread_loop, "Time Thread", daemon=False)
+            self.time_thread = threading.Thread(None, self.time_thread_loop, "Time Thread", daemon=True)
             self.time_thread.start()
             self.gui.start()  # locking
         finally:
@@ -115,8 +116,8 @@ class FSTimeSync:
     def stop(self):
         self.sync_run = False
         self.time_run = False
-        # self.fs_sync.close_pyuipc()
-        exit()
+        self.fs_sync.close_pyuipc()
+        sys.exit(0)
 
     def get_now(self):
         if self.now_source == "NTP":

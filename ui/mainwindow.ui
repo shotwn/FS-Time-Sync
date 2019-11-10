@@ -124,7 +124,7 @@ QToolButton {
      </font>
     </property>
     <property name="text">
-     <string>01</string>
+     <string/>
     </property>
    </widget>
    <widget class="QLabel" name="sim_date">
@@ -142,7 +142,7 @@ QToolButton {
      </font>
     </property>
     <property name="text">
-     <string>12.12.2019</string>
+     <string/>
     </property>
     <property name="alignment">
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -297,7 +297,7 @@ QToolButton {
      </font>
     </property>
     <property name="text">
-     <string>30</string>
+     <string/>
     </property>
    </widget>
    <widget class="QLabel" name="sim_time_seperator">
@@ -315,7 +315,7 @@ QToolButton {
      </font>
     </property>
     <property name="text">
-     <string>:</string>
+     <string/>
     </property>
    </widget>
    <widget class="Line" name="line">
@@ -368,14 +368,14 @@ QToolButton {
    <widget class="QToolButton" name="source_button_2">
     <property name="geometry">
      <rect>
-      <x>13</x>
+      <x>11</x>
       <y>112</y>
       <width>41</width>
       <height>13</height>
      </rect>
     </property>
     <property name="text">
-     <string>Offset</string>
+     <string/>
     </property>
    </widget>
    <widget class="QLabel" name="right_status">
@@ -409,7 +409,7 @@ QToolButton {
      </font>
     </property>
     <property name="text">
-     <string>00</string>
+     <string/>
     </property>
    </widget>
    <widget class="QLabel" name="right_status_2">

@@ -12,6 +12,8 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
         self.gui_root = gui_root
         # Icons
+        self.setWindowIcon(self.gui_root.icons["logo"])
+        self.setWindowTitle("FS Time Sync")
         self.ui.sync_button.setIcon(self.gui_root.icons["timelapse"])
         self.ui.sync_button.setIconSize(QSize(60, 60))
         self.ui.live_button.setIcon(self.gui_root.icons["sync_disabled"])
