@@ -1,73 +1,256 @@
-import pyuipc
 import time
-import struct
-from datetime import datetime
+import socket
+from datetime import datetime, timezone
+import ntplib
+import threading
+import pyuipc
+
+from gui.gui import GUI
 
 
-pyuipc.open(12)
+class FlipFlop:
+    def __init__(self, to_flop, default=" "):
+        self.to_flop = to_flop
+        self.default = default
+        self.flop = True
 
-def convert_bcd(data, length):
-    """BCD to string"""
-    bcd = ""
-    for i in range(0, length):
-        digit = chr(ord('0') + (data&0x0f))
-        data >>= 4
-        bcd = digit + bcd
-    return bcd
+    def __str__(self):
+        return self.get()
 
-def prepare_offsets(offsets):
-    offsets_rough_dict = []
-    for key, offset in offsets.items():
-        offsets_rough_dict.append((offset[0], offset[1]))
+    def get(self):
+        to_return = self.default
+        if self.flop:
+            to_return = self.to_flop
 
-    return pyuipc.prepare_data(offsets_rough_dict, True)
+        self.flop = not self.flop
 
-def format_radio_freq_to_string(freq):
-    return """1{}.{}0""".format(hex(freq)[2:4], hex(freq)[4:6])
+        return to_return
 
-def format_string_to_radio_freq(string):
-    return int("0x"+string[1:3] + string[4:6], 16)
 
-def read_offsets(offsets_to_read):
-    offset_results = {}
-    offset_values = pyuipc.read(offsets_to_read)
+class OffsetSet:
+    def __init__(self, offsets):
+        self.offsets = offsets
+        self.prepared_data = None
+        self.latest_read = None
+        self.prepare()
 
-    for (key, offset), value in zip(offsets.items(), offset_values):
-        offset_results[key] = value
-    
-    return offset_results
+    def prepare(self):
+        offsets_rough_dict = []
+        for key, offset in self.offsets.items():
+            offsets_rough_dict.append((offset[0], offset[1]))
 
-"""
-/**
- * Types:
- * - b: 1 byte unsigned char -> int
- * - c: 1 byte signed char -> int
- * - h: 2 byte signed short -> int
- * - H: 2 byte unsigned short -> int
- * - d: 4 byte signed integer -> int
- * - u: 4 byte unsigned integer -> long
- * - l: 8 byte signed long long -> long
- * - L: 8 byte unsigned long long -> long
- * - f: 8 byte double -> double
- */
- """
-offsets = {
-    "TIME_HOUR": [0x023B, "b"],
-    "TIME_MINUTE": [0x023C, "b"]
-}
+        self.prepared_data = pyuipc.prepare_data(offsets_rough_dict, True)
 
-offsets_to_read = prepare_offsets(offsets)
+    def read(self):
+        offset_results = {}
+        offset_values = pyuipc.read(self.prepared_data)
 
-print("Script will check time every 10 seconds. After first sync you can close this window.")
-while True:
-    curr_offsets = read_offsets(offsets_to_read)
-    now = datetime.utcnow()
-    print("Current Time: {}:{}z Simulator Time: {}:{}z".format(now.hour, now.minute, curr_offsets["TIME_HOUR"], curr_offsets["TIME_MINUTE"]))
+        for (key, offset), value in zip(self.offsets.items(), offset_values):
+            offset_results[key] = value
 
-    if curr_offsets["TIME_HOUR"] != now.hour or curr_offsets["TIME_MINUTE"] > now.minute + 1 or curr_offsets["TIME_MINUTE"] < now.minute - 1:
-        print("DOING A ZULU TIME SYNC.")
-        pyuipc.write([(offsets["TIME_HOUR"][0], offsets["TIME_HOUR"][1], now.hour)])
-        pyuipc.write([(offsets["TIME_MINUTE"][0], offsets["TIME_MINUTE"][1], now.minute)])
+        self.latest_read = offset_results
+        return offset_results
 
-    # pyuipc.write([(offsets["RADIOSWAP"][0], offsets["RADIOSWAP"][1],8)])
-    time.sleep(10)
+    def write(self, offset, value):
+        offset_raw = self.offsets[offset]
+        pyuipc.write([(offset_raw[0], offset_raw[1], value)])
+
+
+class FSSync:
+    def __init__(self):
+        self.offset_sets = []
+        self.pyuipc_open = False
+        self.opened_sim = "Prepar3D v4"
+
+    def connect_pyuipc(self):
+        if self.pyuipc_open:
+            return self.pyuipc_open
+
+        try:
+            pyuipc.open(12)
+        except pyuipc.FSUIPCException as exc:
+            print(exc)
+            return None
+
+        self.pyuipc_open = 12
+        return True
+
+    def close_pyuipc(self):
+        pyuipc.close()
+
+    def create_offset_set(self, offsets):
+        new_offset_set = OffsetSet(offsets)
+        self.offset_sets.append(new_offset_set)
+        return new_offset_set
+
+    def read_all_offset_sets(self):
+        for offset_set in self.offset_sets:
+            offset_set.read()
+
+
+class FSTimeSync:
+    def __init__(self):
+        self.fs_sync = FSSync()
+        self.gui = GUI(self)
+        self.time_offsets = None
+        self.sync_run = False
+        self.sync_thread = None
+        self.time_run = False
+        self.time_thread = None
+        self.enable_live_sync = False
+        self.now_source = "S"
+        self.ntp_client = ntplib.NTPClient()
+        self.ntp_delta = None
+
+    def start(self):
+        try:
+            self.sync_thread = threading.Thread(None, self.sync_thread_runner, "Sync Thread", daemon=False)
+            self.sync_thread.start()
+            self.time_thread = threading.Thread(None, self.time_thread_loop, "Time Thread", daemon=False)
+            self.time_thread.start()
+            self.gui.start()  # locking
+        finally:
+            self.stop()
+
+    def stop(self):
+        self.sync_run = False
+        self.time_run = False
+        # self.fs_sync.close_pyuipc()
+        exit()
+
+    def get_now(self):
+        if self.now_source == "NTP":
+            try:
+                if not self.ntp_delta:
+                    response = self.ntp_client.request('pool.ntp.org')
+                    print(time.ctime(response.tx_time))
+                    self.ntp_delta = datetime.now(timezone.utc) - datetime.fromtimestamp(response.tx_time, timezone.utc)
+                    print(self.ntp_delta)
+                    self.gui.remove_message(1, 0)
+                return datetime.utcnow() - self.ntp_delta
+            except (ntplib.NTPException, socket.gaierror) as exc:
+                self.gui.add_message(1, 0, "Can't reach NTP server.")
+                print(exc)
+                return datetime.utcnow()
+        return datetime.utcnow()
+
+    def switch_now_source(self):
+        if self.now_source == "NTP":  # Will switch to S
+            self.now_source = "S"
+            self.gui.main_window.ui.utc_label.setText("UTC.S")
+            self.gui.main_window.ui.utc_label.setToolTip("UTC.S : Using System Time")
+        elif self.now_source == "S":  # Will switch to NTP
+            self.ntp_delta = None  # Refresh NTP
+            self.now_source = "NTP"
+            self.gui.main_window.ui.utc_label.setText("UTC.NTP")
+            self.gui.main_window.ui.utc_label.setToolTip("UTC.NTP : Using Network Time Protocol, Online Time")
+
+        self.gui.remove_message(0, 1)  # Remove will sync message
+
+    def time_thread_loop(self):
+        self.time_run = True
+        while self.time_run:
+            now = self.get_now()
+            self.gui.main_window.ui.real_time_hour.setText("{:02d}".format(now.hour))
+            # self.gui.main_window.ui.real_time_seperator.setText(str(two_dots))
+            self.gui.main_window.ui.real_time_minute.setText("{:02d}".format(now.minute))
+            self.gui.main_window.ui.real_time_second.setText("{:02d}".format(now.second))
+            self.gui.main_window.ui.real_date.setText("{:02d}.{:02d}.{}".format(now.day, now.month, now.year))
+            # print(now)
+            time.sleep(0.5)
+
+    def sync_thread_runner(self):
+        # Est. FSUIPC connection.
+        # Try every 10 seconds.
+        self.sync_run = True
+        while self.sync_run:
+            if not self.fs_sync.connect_pyuipc():
+                print(self.fs_sync.connect_pyuipc())
+                print("Cannot connect FSUIPC.")
+                time.sleep(10)
+                continue
+            self.gui.main_window.ui.sim_label.setText(self.fs_sync.opened_sim)
+            break
+        offsets = {
+            "TIME_SECOND": [0x023A, "b"],
+            "TIME_HOUR": [0x023B, "b"],
+            "TIME_MINUTE": [0x023C, "b"],
+            "DATE_DAY": [0x023D, "b"],
+            "DATE_MONTH": [0x0242, "b"],
+            "DATE_YEAR": [0x024A, "H"],
+        }
+        self.time_offsets = self.fs_sync.create_offset_set(offsets)
+
+        self.sync_routine_loop()
+
+    def toggle_live_sync(self):
+        print("toggle live sync")
+        self.enable_live_sync = not self.enable_live_sync
+        if not self.enable_live_sync:
+            self.gui.remove_message(0, 1)  # Remove will sync message
+            self.gui.main_window.ui.live_button.setIcon(self.gui.icons["sync_disabled"])
+            self.gui.main_window.ui.live_button.setToolTip("Live Sync: Disabled")
+        else:
+            self.gui.main_window.ui.live_button.setIcon(self.gui.icons["sync"])
+            self.gui.main_window.ui.live_button.setToolTip("Live Sync: Enabled")
+
+    def sync_routine_loop(self):
+        two_dots = FlipFlop(":")
+        while self.sync_run:
+            data_delta = self.sync_sim()
+            if not data_delta:
+                continue
+            data = data_delta[0]
+            delta = data_delta[1]
+
+            self.gui.main_window.ui.sim_time_hour.setText("{:02d}".format(data["TIME_HOUR"]))
+            self.gui.main_window.ui.sim_time_seperator.setText(str(two_dots))
+            self.gui.main_window.ui.sim_time_minute.setText("{:02d}".format(data["TIME_MINUTE"]))
+            self.gui.main_window.ui.sim_time_second.setText("{:02d}".format(data["TIME_SECOND"]))
+            self.gui.main_window.ui.sim_date.setText("{:02d}.{:02d}.{}".format(data["DATE_DAY"], data["DATE_MONTH"], data["DATE_YEAR"]))
+            self.gui.main_window.ui.sim_time_second.setToolTip("ε: {} Δ: {:02f}".format(30, delta))
+            # print(data)
+
+            time.sleep(1)
+
+    def sync_sim(self, force=False):
+        """
+        Returns initial data if no sync.
+        Returns new data if there has been sync.
+        """
+
+        data = self.time_offsets.read()
+        now = self.get_now()
+        time_from_data = datetime(data["DATE_YEAR"], data["DATE_MONTH"], data["DATE_DAY"], data["TIME_HOUR"], data["TIME_MINUTE"], second=data["TIME_SECOND"])
+        delta = (now - time_from_data).total_seconds()
+
+        if self.enable_live_sync or force:
+            if not self.fs_sync.pyuipc_open:
+                return
+
+            if abs(delta) > 30 or force:
+                if force:
+                    if data["TIME_SECOND"] - now.second > 20:
+                        self.time_offsets.write("TIME_SECOND", 0)
+                else:
+                    if now.second > 1:
+                        self.gui.add_message(0, 1, "Will Sync At: {:02d}:{:02d}z".format(now.hour, now.minute + 1))
+                        return [data, delta]
+
+                    self.time_offsets.write("TIME_SECOND", 0)
+
+                print("DOING A ZULU TIME SYNC.")
+
+                self.time_offsets.write("TIME_HOUR", now.hour)
+                self.time_offsets.write("TIME_MINUTE", now.minute)
+
+                self.gui.remove_message(0, 1)  # Remove will sync message
+                self.gui.add_message(0, 2, "Last Sync: {:02d}:{:02d}:{:02d}z".format(now.hour, now.minute, now.second))
+                return [self.time_offsets.read(), delta]  # Return fresh data
+
+        return [data, delta]
+
+
+if __name__ == "__main__":
+    ROOT = FSTimeSync()
+    ROOT.start()
