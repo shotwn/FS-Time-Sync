@@ -1,7 +1,6 @@
 from PySide2.QtWidgets import QMainWindow
 from PySide2.QtCore import Slot, Signal, QSize, Qt
 
-import gui.common
 from qtgenerated.scenerycontainer import Ui_MainWindow
 
 

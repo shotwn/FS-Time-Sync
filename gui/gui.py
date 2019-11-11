@@ -6,7 +6,6 @@ from PySide2.QtGui import QIcon
 
 from gui.mainwindow import MainWindow
 
-
 def resource_path(relative_path):
     """
     Get absolute path to resource, works for dev and for PyInstaller
