@@ -1,5 +1,5 @@
 <div align="center">
-<a href="https://github.com/shotwn/ZZ-Cat/"  >
+<a href="https://github.com/shotwn/FS-Time-Sync/"  >
 <img src="icons/logo.png" alt="Logo" width="200" height="200" style="margin-bottom:-20px" />
 </a>
 <h3 align="center">FS Time Sync</h3>
