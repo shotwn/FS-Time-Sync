@@ -201,6 +201,7 @@ class FSTimeSync:
             data_delta = self.sync_sim()
             if not data_delta:
                 continue
+
             data = data_delta[0]
             delta = data_delta[1]
 
@@ -220,10 +221,13 @@ class FSTimeSync:
         Returns new data if there has been sync.
         """
 
-        data = self.time_offsets.read()
-        now = self.get_now()
-        time_from_data = datetime(data["DATE_YEAR"], data["DATE_MONTH"], data["DATE_DAY"], data["TIME_HOUR"], data["TIME_MINUTE"], second=data["TIME_SECOND"])
-        delta = (now - time_from_data).total_seconds()
+        try:
+            data = self.time_offsets.read()
+            now = self.get_now()
+            time_from_data = datetime(data["DATE_YEAR"], data["DATE_MONTH"], data["DATE_DAY"], data["TIME_HOUR"], data["TIME_MINUTE"], second=data["TIME_SECOND"])
+            delta = (now - time_from_data).total_seconds()
+        except ValueError:
+            return False
 
         if self.enable_live_sync or force:
             if not self.fs_sync.pyuipc_open:
@@ -234,7 +238,7 @@ class FSTimeSync:
                     if data["TIME_SECOND"] - now.second > 20:
                         self.time_offsets.write("TIME_SECOND", 0)
                 else:
-                    if now.second > 1:
+                    if now.second > 3:
                         self.gui.add_message(0, 1, "Will Sync At: {:02d}:{:02d}z".format(now.hour, now.minute + 1))
                         return [data, delta]
 

@@ -1,5 +1,5 @@
 from PySide2.QtWidgets import QMainWindow
-from PySide2.QtCore import Slot, QSize
+from PySide2.QtCore import Slot, QSize, Qt
 
 import gui.common
 from qtgenerated.scenerycontainer import Ui_MainWindow
@@ -14,6 +14,7 @@ class MainWindow(QMainWindow):
         # Icons
         self.setWindowIcon(self.gui_root.icons["logo"])
         self.setWindowTitle("FS Time Sync")
+        self.setWindowFlags(Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint)
         self.ui.sync_button.setIcon(self.gui_root.icons["timelapse"])
         self.ui.sync_button.setIconSize(QSize(60, 60))
         self.ui.live_button.setIcon(self.gui_root.icons["sync_disabled"])
