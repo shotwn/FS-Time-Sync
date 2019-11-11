@@ -1,16 +1,19 @@
 from PySide2.QtWidgets import QMainWindow
-from PySide2.QtCore import Slot, QSize, Qt
+from PySide2.QtCore import Slot, Signal, QSize, Qt
 
 import gui.common
 from qtgenerated.scenerycontainer import Ui_MainWindow
 
 
 class MainWindow(QMainWindow):
+    act = Signal(dict)
+
     def __init__(self, gui_root):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.gui_root = gui_root
+        self.act.connect(self._act)
         # Icons
         self.setWindowIcon(self.gui_root.icons["logo"])
         self.setWindowTitle("FS Time Sync")
@@ -35,3 +38,27 @@ class MainWindow(QMainWindow):
     @Slot()
     def toggle_live_sync(self):
         self.gui_root.root.toggle_live_sync()
+
+    @Slot()
+    def _act(self, params):
+        length = len(params)
+        if length == 0:
+            raise ValueError
+
+        action = params[0]
+        args = []
+        kwargs = {}
+
+        if length > 1:
+            if isinstance(params[1], tuple) or isinstance(params[1], list):
+                args = params[1]
+            else:
+                args = [params[1]]
+
+        if length > 2:
+            kwargs = params[2]
+
+        if length > 3:
+            raise ValueError
+
+        action(*args, **kwargs)

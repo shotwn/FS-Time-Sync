@@ -89,10 +89,12 @@ class FSSync:
             offset_set.read()
 
 
-class FSTimeSync:  # TODO: Carry setText to threading safe signal / slot
+class FSTimeSync:
     def __init__(self):
         self.fs_sync = FSSync()
         self.gui = GUI(self)
+        self.mw_emit = self.gui.main_window.act.emit  # TODO: Switch from mw_emit to mw_act
+        self.mw_act = self.gui.main_window_act
         self.time_offsets = None
         self.sync_run = False
         self.sync_thread = None
@@ -138,13 +140,13 @@ class FSTimeSync:  # TODO: Carry setText to threading safe signal / slot
     def switch_now_source(self):
         if self.now_source == "NTP":  # Will switch to S
             self.now_source = "S"
-            self.gui.main_window.ui.utc_label.setText("UTC.S")
-            self.gui.main_window.ui.utc_label.setToolTip("UTC.S : Using System Time")
+            self.mw_emit([self.gui.main_window.ui.utc_label.setText, "UTC.S"])
+            self.mw_emit([self.gui.main_window.ui.utc_label.setToolTip, "UTC.S : Using System Time"])
         elif self.now_source == "S":  # Will switch to NTP
             self.ntp_delta = None  # Refresh NTP
             self.now_source = "NTP"
-            self.gui.main_window.ui.utc_label.setText("UTC.NTP")
-            self.gui.main_window.ui.utc_label.setToolTip("UTC.NTP : Using Network Time Protocol, Online Time")
+            self.mw_emit([self.gui.main_window.ui.utc_label.setText, "UTC.NTP"])
+            self.mw_emit([self.gui.main_window.ui.utc_label.setToolTip, "UTC.NTP : Using Network Time Protocol, Online Time"])
 
         self.gui.remove_message(0, 1)  # Remove will sync message
 
@@ -152,12 +154,13 @@ class FSTimeSync:  # TODO: Carry setText to threading safe signal / slot
         self.time_run = True
         while self.time_run:
             now = self.get_now()
-            self.gui.main_window.ui.real_time_hour.setText("{:02d}".format(now.hour))
-            # self.gui.main_window.ui.real_time_seperator.setText(str(two_dots))
-            self.gui.main_window.ui.real_time_minute.setText("{:02d}".format(now.minute))
-            self.gui.main_window.ui.real_time_second.setText("{:02d}".format(now.second))
-            self.gui.main_window.ui.real_date.setText("{:02d}.{:02d}.{}".format(now.day, now.month, now.year))
+            self.mw_emit([self.gui.main_window.ui.real_time_hour.setText, "{:02d}".format(now.hour)])
+            # self.mw_emit([self.gui.main_window.ui.real_time_seperator.setText, str(two_dots))
+            self.mw_emit([self.gui.main_window.ui.real_time_minute.setText, "{:02d}".format(now.minute)])
+            self.mw_emit([self.gui.main_window.ui.real_time_second.setText, "{:02d}".format(now.second)])
+            self.mw_emit([self.gui.main_window.ui.real_date.setText, "{:02d}.{:02d}.{}".format(now.day, now.month, now.year)])
             # print(now)
+            self.gui.main_window_act(self.gui.main_window.ui.left_status.setText, "Alpha Build")
             time.sleep(0.5)
 
     def sync_thread_runner(self):
@@ -170,7 +173,7 @@ class FSTimeSync:  # TODO: Carry setText to threading safe signal / slot
                 print("Cannot connect FSUIPC.")
                 time.sleep(10)
                 continue
-            self.gui.main_window.ui.sim_label.setText(self.fs_sync.opened_sim)
+            self.mw_emit([self.gui.main_window.ui.sim_label.setText, self.fs_sync.opened_sim])
             break
         offsets = {
             "TIME_SECOND": [0x023A, "b"],
@@ -189,11 +192,11 @@ class FSTimeSync:  # TODO: Carry setText to threading safe signal / slot
         self.enable_live_sync = not self.enable_live_sync
         if not self.enable_live_sync:
             self.gui.remove_message(0, 1)  # Remove will sync message
-            self.gui.main_window.ui.live_button.setIcon(self.gui.icons["sync_disabled"])
-            self.gui.main_window.ui.live_button.setToolTip("Live Sync: Disabled")
+            self.mw_emit([self.gui.main_window.ui.live_button.setIcon, self.gui.icons["sync_disabled"]])
+            self.mw_emit([self.gui.main_window.ui.live_button.setToolTip, "Live Sync: Disabled"])
         else:
-            self.gui.main_window.ui.live_button.setIcon(self.gui.icons["sync"])
-            self.gui.main_window.ui.live_button.setToolTip("Live Sync: Enabled")
+            self.mw_emit([self.gui.main_window.ui.live_button.setIcon, self.gui.icons["sync"]])
+            self.mw_emit([self.gui.main_window.ui.live_button.setToolTip, "Live Sync: Enabled"])
 
     def sync_routine_loop(self):
         two_dots = FlipFlop(":")
@@ -205,12 +208,12 @@ class FSTimeSync:  # TODO: Carry setText to threading safe signal / slot
             data = data_delta[0]
             delta = data_delta[1]
 
-            self.gui.main_window.ui.sim_time_hour.setText("{:02d}".format(data["TIME_HOUR"]))
-            self.gui.main_window.ui.sim_time_seperator.setText(str(two_dots))
-            self.gui.main_window.ui.sim_time_minute.setText("{:02d}".format(data["TIME_MINUTE"]))
-            self.gui.main_window.ui.sim_time_second.setText("{:02d}".format(data["TIME_SECOND"]))
-            self.gui.main_window.ui.sim_date.setText("{:02d}.{:02d}.{}".format(data["DATE_DAY"], data["DATE_MONTH"], data["DATE_YEAR"]))
-            self.gui.main_window.ui.sim_time_second.setToolTip("ε: {} Δ: {:02f}".format(30, delta))
+            self.mw_emit([self.gui.main_window.ui.sim_time_hour.setText, "{:02d}".format(data["TIME_HOUR"])])
+            self.mw_emit([self.gui.main_window.ui.sim_time_seperator.setText, str(two_dots)])
+            self.mw_emit([self.gui.main_window.ui.sim_time_minute.setText, "{:02d}".format(data["TIME_MINUTE"])])
+            self.mw_emit([self.gui.main_window.ui.sim_time_second.setText, "{:02d}".format(data["TIME_SECOND"])])
+            self.mw_emit([self.gui.main_window.ui.sim_date.setText, "{:02d}.{:02d}.{}".format(data["DATE_DAY"], data["DATE_MONTH"], data["DATE_YEAR"])])
+            self.mw_emit([self.gui.main_window.ui.sim_time_second.setToolTip, "ε: {} Δ: {:02f}".format(30, delta)])
             # print(data)
 
             time.sleep(1)

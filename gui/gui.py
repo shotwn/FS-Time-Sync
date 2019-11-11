@@ -34,6 +34,9 @@ class GUI:
             self.main_window.ui.right_status_2
         ]
 
+    def main_window_act(self, func, *args, **kwargs):
+        self.main_window.act.emit([func, args, kwargs])
+
     def start(self):
         self.main_window.show()
         self.app.exec_()
@@ -49,7 +52,7 @@ class GUI:
                 "msg": msg
             })
 
-        self.section_labels[section].setText(msg)
+        self.main_window.act.emit([self.section_labels[section].setText, msg])
 
     def remove_message(self, section, code):
         for message in self.messages[section]:
@@ -61,6 +64,6 @@ class GUI:
 
         if len(self.messages[section]) > 0:
             print(self.messages[section])
-            self.section_labels[section].setText(self.messages[section][-1]["msg"])
+            self.main_window.act.emit([self.section_labels[section].setText, self.messages[section][-1]["msg"]])
         else:
-            self.section_labels[section].setText("")
+            self.main_window.act.emit([self.section_labels[section].setText, ""])
