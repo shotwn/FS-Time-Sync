@@ -89,7 +89,7 @@ class FSSync:
             offset_set.read()
 
 
-class FSTimeSync:
+class FSTimeSync:  # TODO: Carry setText to threading safe signal / slot
     def __init__(self):
         self.fs_sync = FSSync()
         self.gui = GUI(self)
