@@ -8,6 +8,7 @@ from qtgenerated.offsetwindow import Ui_Dialog
 from gui.guicommon import GUICommon
 from shotwn import BasicTimeDelta
 
+
 class OffsetWindow(QDialog, GUICommon):
     def __init__(self, gui_root):
         QDialog.__init__(self)
