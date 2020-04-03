@@ -1,9 +1,9 @@
 ﻿# -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'mainwindow.ui',
-# licensing of 'mainwindow.ui' applies.
+# Form implementation generated from reading ui file 'D:\Works\Dev\FSUTCSync\ui\mainwindow.ui',
+# licensing of 'D:\Works\Dev\FSUTCSync\ui\mainwindow.ui' applies.
 #
-# Created: Mon Nov 11 02:44:57 2019
+# Created: Fri Apr  3 13:28:04 2020
 #      by: pyside2-uic  running on PySide2 5.13.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -19,11 +19,14 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(MainWindow.sizePolicy().hasHeightForWidth())
         MainWindow.setSizePolicy(sizePolicy)
+        MainWindow.setMinimumSize(QtCore.QSize(500, 162))
+        MainWindow.setMaximumSize(QtCore.QSize(500, 162))
+        MainWindow.setWindowTitle("FS Time Sync")
+        MainWindow.setToolTip("")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setStyleSheet("#centralwidget {\n"
 "    background-color: #151515;\n"
 "    color: #ffffff;\n"
-"\n"
 "}\n"
 "\n"
 "QLabel {\n"
@@ -34,6 +37,16 @@ class Ui_MainWindow(object):
 "    color: #ffffff;\n"
 "    background-color: #151515;\n"
 "    border: 0px;\n"
+"}\n"
+"\n"
+"QPushButton {\n"
+"    color: #ffffff;\n"
+"    background-color: #151515;\n"
+"    border: 0px;\n"
+"}\n"
+"\n"
+"#offset_button {\n"
+"   text-align:left\n"
 "}")
         self.centralwidget.setObjectName("centralwidget")
         self.real_time_hour = QtWidgets.QLabel(self.centralwidget)
@@ -75,23 +88,32 @@ class Ui_MainWindow(object):
         self.sim_date.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.sim_date.setObjectName("sim_date")
         self.left_status = QtWidgets.QLabel(self.centralwidget)
-        self.left_status.setGeometry(QtCore.QRect(18, 126, 221, 13))
+        self.left_status.setGeometry(QtCore.QRect(16, 126, 251, 13))
         self.left_status.setText("")
         self.left_status.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.left_status.setObjectName("left_status")
         self.left_value = QtWidgets.QLabel(self.centralwidget)
-        self.left_value.setGeometry(QtCore.QRect(18, 140, 221, 13))
+        self.left_value.setGeometry(QtCore.QRect(16, 139, 251, 13))
+        font = QtGui.QFont()
+        font.setPointSize(7)
+        self.left_value.setFont(font)
         self.left_value.setText("")
         self.left_value.setObjectName("left_value")
         self.live_button = QtWidgets.QToolButton(self.centralwidget)
         self.live_button.setGeometry(QtCore.QRect(342, 60, 60, 60))
+        self.live_button.setCursor(QtCore.Qt.PointingHandCursor)
         self.live_button.setStyleSheet("")
         self.live_button.setObjectName("live_button")
         self.sync_button = QtWidgets.QToolButton(self.centralwidget)
         self.sync_button.setGeometry(QtCore.QRect(418, 60, 60, 60))
+        font = QtGui.QFont()
+        font.setStrikeOut(False)
+        self.sync_button.setFont(font)
+        self.sync_button.setCursor(QtCore.Qt.PointingHandCursor)
         self.sync_button.setObjectName("sync_button")
         self.source_button = QtWidgets.QToolButton(self.centralwidget)
         self.source_button.setGeometry(QtCore.QRect(275, 139, 41, 13))
+        self.source_button.setCursor(QtCore.Qt.PointingHandCursor)
         self.source_button.setObjectName("source_button")
         self.label_2 = QtWidgets.QLabel(self.centralwidget)
         self.label_2.setGeometry(QtCore.QRect(330, 6, 81, 16))
@@ -144,10 +166,10 @@ class Ui_MainWindow(object):
         self.real_time_second.setFont(font)
         self.real_time_second.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.real_time_second.setObjectName("real_time_second")
-        self.source_button_2 = QtWidgets.QToolButton(self.centralwidget)
-        self.source_button_2.setGeometry(QtCore.QRect(11, 112, 41, 13))
-        self.source_button_2.setText("")
-        self.source_button_2.setObjectName("source_button_2")
+        self.offset_button = QtWidgets.QPushButton(self.centralwidget)
+        self.offset_button.setGeometry(QtCore.QRect(16, 110, 71, 16))
+        self.offset_button.setCursor(QtCore.Qt.PointingHandCursor)
+        self.offset_button.setObjectName("offset_button")
         self.right_status = QtWidgets.QLabel(self.centralwidget)
         self.right_status.setGeometry(QtCore.QRect(330, 121, 161, 20))
         self.right_status.setText("")
@@ -158,6 +180,7 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(8)
         self.sim_time_second.setFont(font)
+        self.sim_time_second.setCursor(QtCore.Qt.CrossCursor)
         self.sim_time_second.setText("")
         self.sim_time_second.setObjectName("sim_time_second")
         self.right_status_2 = QtWidgets.QLabel(self.centralwidget)
@@ -171,7 +194,6 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QtWidgets.QApplication.translate("MainWindow", "MainWindow", None, -1))
         self.real_time_hour.setText(QtWidgets.QApplication.translate("MainWindow", "12", None, -1))
         self.real_date.setText(QtWidgets.QApplication.translate("MainWindow", "12.12.2019", None, -1))
         self.utc_label.setToolTip(QtWidgets.QApplication.translate("MainWindow", "UTC.S : Using System Time", None, -1))
@@ -186,4 +208,5 @@ class Ui_MainWindow(object):
         self.real_time_minute.setText(QtWidgets.QApplication.translate("MainWindow", "30", None, -1))
         self.real_time_seperator.setText(QtWidgets.QApplication.translate("MainWindow", ":", None, -1))
         self.real_time_second.setText(QtWidgets.QApplication.translate("MainWindow", "00", None, -1))
+        self.offset_button.setText(QtWidgets.QApplication.translate("MainWindow", "Set Offset", None, -1))
 

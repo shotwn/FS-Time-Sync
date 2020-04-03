@@ -1,12 +1,13 @@
 import sys
 import time
 import socket
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import ntplib
 import threading
 import pyuipc
 
 from gui.gui import GUI
+from shotwn import BasicTimeDelta
 
 
 class FlipFlop:
@@ -70,7 +71,7 @@ class FSSync:
         try:
             pyuipc.open(12)
         except pyuipc.FSUIPCException as exc:
-            print(exc)
+            #print(exc)
             return None
 
         self.pyuipc_open = 12
@@ -104,6 +105,7 @@ class FSTimeSync:
         self.now_source = "S"
         self.ntp_client = ntplib.NTPClient()
         self.ntp_delta = None
+        self.offset = BasicTimeDelta()
 
     def start(self):
         try:
@@ -160,7 +162,13 @@ class FSTimeSync:
             self.mw_emit([self.gui.main_window.ui.real_time_second.setText, "{:02d}".format(now.second)])
             self.mw_emit([self.gui.main_window.ui.real_date.setText, "{:02d}.{:02d}.{}".format(now.day, now.month, now.year)])
             # print(now)
-            self.gui.main_window_act(self.gui.main_window.ui.left_status.setText, "Alpha Build")
+            if bool(self.offset):
+                offsetted_dt = self.offset + now
+                self.gui.main_window_act(self.gui.main_window.ui.left_status.setText, f"{offsetted_dt.strftime('%H:%M | %d.%m.%Y')}")
+            else:
+                self.gui.main_window_act(self.gui.main_window.ui.left_status.setText, "")
+
+            self.gui.main_window_act(self.gui.main_window.ui.left_value.setText, str(self.offset))
             time.sleep(0.5)
 
     def sync_thread_runner(self):
@@ -169,8 +177,8 @@ class FSTimeSync:
         self.sync_run = True
         while self.sync_run:
             if not self.fs_sync.connect_pyuipc():
-                print(self.fs_sync.connect_pyuipc())
-                print("Cannot connect FSUIPC.")
+                #print(self.fs_sync.connect_pyuipc())
+                #print("Cannot connect FSUIPC.")
                 time.sleep(10)
                 continue
             self.mw_emit([self.gui.main_window.ui.sim_label.setText, self.fs_sync.opened_sim])
@@ -213,7 +221,7 @@ class FSTimeSync:
             self.mw_emit([self.gui.main_window.ui.sim_time_minute.setText, "{:02d}".format(data["TIME_MINUTE"])])
             self.mw_emit([self.gui.main_window.ui.sim_time_second.setText, "{:02d}".format(data["TIME_SECOND"])])
             self.mw_emit([self.gui.main_window.ui.sim_date.setText, "{:02d}.{:02d}.{}".format(data["DATE_DAY"], data["DATE_MONTH"], data["DATE_YEAR"])])
-            self.mw_emit([self.gui.main_window.ui.sim_time_second.setToolTip, "ε: {} Δ: {:02f}".format(30, delta)])
+            self.mw_emit([self.gui.main_window.ui.sim_time_second.setToolTip, "ε: ±{}s Δ: {:02f}s".format(30, delta)])
             # print(data)
 
             time.sleep(1)
@@ -226,10 +234,14 @@ class FSTimeSync:
 
         try:
             data = self.time_offsets.read()
-            now = self.get_now()
+            now = self.offset + self.get_now()
             time_from_data = datetime(data["DATE_YEAR"], data["DATE_MONTH"], data["DATE_DAY"], data["TIME_HOUR"], data["TIME_MINUTE"], second=data["TIME_SECOND"])
             delta = (now - time_from_data).total_seconds()
-        except ValueError:
+        except ValueError as exc:
+            # ValueError generally thrown when FSUIPC is reporting year out of range.
+            # Happens on scenerio screen.
+            print(exc)
+            time.sleep(0.5)
             return False
 
         if self.enable_live_sync or force:
@@ -251,6 +263,9 @@ class FSTimeSync:
 
                 self.time_offsets.write("TIME_HOUR", now.hour)
                 self.time_offsets.write("TIME_MINUTE", now.minute)
+                self.time_offsets.write("DATE_DAY", now.day)
+                self.time_offsets.write("DATE_MONTH", now.month)
+                self.time_offsets.write("DATE_YEAR", now.year)
 
                 self.gui.remove_message(0, 1)  # Remove will sync message
                 self.gui.add_message(0, 2, "Last Sync: {:02d}:{:02d}:{:02d}z".format(now.hour, now.minute, now.second))

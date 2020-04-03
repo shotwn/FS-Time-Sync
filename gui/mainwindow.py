@@ -1,18 +1,20 @@
 from PySide2.QtWidgets import QMainWindow
-from PySide2.QtCore import Slot, Signal, QSize, Qt
+from PySide2.QtCore import Slot, QSize, Qt
 
-from qtgenerated.scenerycontainer import Ui_MainWindow
+from qtgenerated.mainwindow import Ui_MainWindow
+
+from gui.guicommon import GUICommon
+from gui.offsetwindow import OffsetWindow
 
 
-class MainWindow(QMainWindow):
-    act = Signal(dict)
-
+class MainWindow(QMainWindow, GUICommon):
     def __init__(self, gui_root):
-        super().__init__()
+        QMainWindow.__init__(self)
+        GUICommon.__init__(self)
+        self.gui_root = gui_root
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.gui_root = gui_root
-        self.act.connect(self._act)
+
         # Icons
         self.setWindowIcon(self.gui_root.icons["logo"])
         self.setWindowTitle("FS Time Sync")
@@ -25,6 +27,7 @@ class MainWindow(QMainWindow):
         self.ui.source_button.clicked.connect(self.switch_now_source)
         self.ui.sync_button.clicked.connect(self.sync_forced)
         self.ui.live_button.clicked.connect(self.toggle_live_sync)
+        self.ui.offset_button.clicked.connect(self.show_offset_window)
 
     @Slot()
     def switch_now_source(self):
@@ -39,25 +42,6 @@ class MainWindow(QMainWindow):
         self.gui_root.root.toggle_live_sync()
 
     @Slot()
-    def _act(self, params):
-        length = len(params)
-        if length == 0:
-            raise ValueError
-
-        action = params[0]
-        args = []
-        kwargs = {}
-
-        if length > 1:
-            if isinstance(params[1], tuple) or isinstance(params[1], list):
-                args = params[1]
-            else:
-                args = [params[1]]
-
-        if length > 2:
-            kwargs = params[2]
-
-        if length > 3:
-            raise ValueError
-
-        action(*args, **kwargs)
+    def show_offset_window(self):
+        self.gui_root.offset_window = OffsetWindow(self.gui_root)
+        self.gui_root.offset_window.show()

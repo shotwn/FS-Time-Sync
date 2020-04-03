@@ -6,6 +6,7 @@ from PySide2.QtGui import QIcon
 
 from gui.mainwindow import MainWindow
 
+
 def resource_path(relative_path):
     """
     Get absolute path to resource, works for dev and for PyInstaller
@@ -27,6 +28,7 @@ class GUI:
         }
 
         self.main_window = MainWindow(self)
+        self.offset_window = None
         self.messages = [[], []]
         self.section_labels = [
             self.main_window.ui.right_status,
@@ -66,3 +68,6 @@ class GUI:
             self.main_window.act.emit([self.section_labels[section].setText, self.messages[section][-1]["msg"]])
         else:
             self.main_window.act.emit([self.section_labels[section].setText, ""])
+
+    def show_offset_window(self):
+        return True
