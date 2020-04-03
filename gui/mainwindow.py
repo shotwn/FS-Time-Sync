@@ -45,3 +45,7 @@ class MainWindow(QMainWindow, GUICommon):
     def show_offset_window(self):
         self.gui_root.offset_window = OffsetWindow(self.gui_root)
         self.gui_root.offset_window.show()
+
+    def closeEvent(self, event):
+        event.accept()
+        self.gui_root.app.quit()
