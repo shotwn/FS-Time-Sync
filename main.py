@@ -171,6 +171,17 @@ class FSTimeSync:
             self.gui.main_window_act(self.gui.main_window.ui.left_status.setText, str(self.offset))
             time.sleep(0.5)
 
+    def toggle_live_sync(self):
+        print("toggle live sync")
+        self.enable_live_sync = not self.enable_live_sync
+        if not self.enable_live_sync:
+            self.gui.remove_message(0, 1)  # Remove will sync message
+            self.mw_emit([self.gui.main_window.ui.live_button.setIcon, self.gui.icons["sync_disabled"]])
+            self.mw_emit([self.gui.main_window.ui.live_button.setToolTip, "Live Sync: Disabled"])
+        else:
+            self.mw_emit([self.gui.main_window.ui.live_button.setIcon, self.gui.icons["sync"]])
+            self.mw_emit([self.gui.main_window.ui.live_button.setToolTip, "Live Sync: Enabled"])
+
     def sync_thread_runner(self):
         # Est. FSUIPC connection.
         # Try every 10 seconds.
@@ -183,28 +194,19 @@ class FSTimeSync:
                 continue
             self.mw_emit([self.gui.main_window.ui.sim_label.setText, self.fs_sync.opened_sim])
             break
-        offsets = {
-            "TIME_SECOND": [0x023A, "b"],
-            "TIME_HOUR": [0x023B, "b"],
-            "TIME_MINUTE": [0x023C, "b"],
-            "DATE_DAY": [0x023D, "b"],
-            "DATE_MONTH": [0x0242, "b"],
-            "DATE_YEAR": [0x024A, "H"],
-        }
-        self.time_offsets = self.fs_sync.create_offset_set(offsets)
+
+        if not self.time_offsets:
+            offsets = {
+                "TIME_SECOND": [0x023A, "b"],
+                "TIME_HOUR": [0x023B, "b"],
+                "TIME_MINUTE": [0x023C, "b"],
+                "DATE_DAY": [0x023D, "b"],
+                "DATE_MONTH": [0x0242, "b"],
+                "DATE_YEAR": [0x024A, "H"],
+            }
+            self.time_offsets = self.fs_sync.create_offset_set(offsets)
 
         self.sync_routine_loop()
-
-    def toggle_live_sync(self):
-        print("toggle live sync")
-        self.enable_live_sync = not self.enable_live_sync
-        if not self.enable_live_sync:
-            self.gui.remove_message(0, 1)  # Remove will sync message
-            self.mw_emit([self.gui.main_window.ui.live_button.setIcon, self.gui.icons["sync_disabled"]])
-            self.mw_emit([self.gui.main_window.ui.live_button.setToolTip, "Live Sync: Disabled"])
-        else:
-            self.mw_emit([self.gui.main_window.ui.live_button.setIcon, self.gui.icons["sync"]])
-            self.mw_emit([self.gui.main_window.ui.live_button.setToolTip, "Live Sync: Enabled"])
 
     def sync_routine_loop(self):
         two_dots = FlipFlop(":")
