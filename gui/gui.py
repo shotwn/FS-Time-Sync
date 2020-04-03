@@ -1,7 +1,7 @@
 import os
 import sys
 
-from PySide2.QtWidgets import QApplication
+from PySide2.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PySide2.QtGui import QIcon
 
 from gui.mainwindow import MainWindow
@@ -35,8 +35,54 @@ class GUI:
             self.main_window.ui.right_status_2
         ]
 
+        menu = QMenu('FS Time Sync')
+        menu.setStyleSheet("""
+        QMenu {
+            background-color: #151515;
+            color: #ffffff;
+        }
+        QMenu::item {
+            padding: 5px 10px 5px 10px;
+        }
+        QMenu::item:selected {
+            background-color: #ffffff;
+            color: #151515;
+        }
+        """)
+        self.tray_actions = {}
+        self.tray_actions["hide_show"] = menu.addAction("Hide")
+        self.tray_actions["hide_show"].triggered.connect(self.hide)
+        self.tray_actions["exit"] = menu.addAction("Exit")
+        self.tray_actions["exit"].triggered.connect(self.exit)
+
+        self.tray = QSystemTrayIcon()
+        self.tray.setIcon(self.icons['logo'])
+        self.tray.setToolTip("FS Time Sync")
+        self.tray.setContextMenu(menu)
+        self.tray.activated.connect(self.trayActivated)
+        self.tray.show()
+
     def main_window_act(self, func, *args, **kwargs):
         self.main_window.act.emit([func, args, kwargs])
+
+    def hide(self):
+        self.tray_actions["hide_show"].setText("Show")
+        self.tray_actions["hide_show"].triggered.connect(self.show)
+        if self.offset_window:
+            self.offset_window.close()
+        self.main_window.hide()
+
+    def trayActivated(self, reason):
+        if reason == self.tray.ActivationReason.Trigger:
+            self.show()
+
+    def show(self):
+        self.tray_actions["hide_show"].setText("Hide")
+        self.tray_actions["hide_show"].triggered.connect(self.hide)
+        self.main_window.show()
+
+    def exit(self):
+        self.app.quit()
 
     def start(self):
         self.main_window.show()

@@ -48,4 +48,4 @@ class MainWindow(QMainWindow, GUICommon):
 
     def closeEvent(self, event):
         event.accept()
-        self.gui_root.app.quit()
+        self.gui_root.exit()
