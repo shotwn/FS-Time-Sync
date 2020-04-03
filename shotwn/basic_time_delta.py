@@ -32,6 +32,7 @@ class BasicTimeDelta:
 
         # print(new)
         days_to_add = getattr(self, "day", 0)
+        new["second"] = param1.second  # Get seconds directly.
         date_wo_days = datetime(**new)
 
         return date_wo_days + timedelta(days=days_to_add)
