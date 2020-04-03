@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'D:\Works\Dev\FSUTCSync\ui\offsetwindow.ui',
 # licensing of 'D:\Works\Dev\FSUTCSync\ui\offsetwindow.ui' applies.
 #
-# Created: Fri Apr  3 13:28:04 2020
+# Created: Fri Apr  3 13:57:14 2020
 #      by: pyside2-uic  running on PySide2 5.13.2
 #
 # WARNING! All changes made in this file will be lost!

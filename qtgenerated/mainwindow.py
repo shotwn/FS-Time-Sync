@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'D:\Works\Dev\FSUTCSync\ui\mainwindow.ui',
 # licensing of 'D:\Works\Dev\FSUTCSync\ui\mainwindow.ui' applies.
 #
-# Created: Fri Apr  3 13:28:04 2020
+# Created: Fri Apr  3 13:57:14 2020
 #      by: pyside2-uic  running on PySide2 5.13.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -89,13 +89,16 @@ class Ui_MainWindow(object):
         self.sim_date.setObjectName("sim_date")
         self.left_status = QtWidgets.QLabel(self.centralwidget)
         self.left_status.setGeometry(QtCore.QRect(16, 126, 251, 13))
+        font = QtGui.QFont()
+        font.setPointSize(7)
+        self.left_status.setFont(font)
         self.left_status.setText("")
         self.left_status.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.left_status.setObjectName("left_status")
         self.left_value = QtWidgets.QLabel(self.centralwidget)
         self.left_value.setGeometry(QtCore.QRect(16, 139, 251, 13))
         font = QtGui.QFont()
-        font.setPointSize(7)
+        font.setPointSize(8)
         self.left_value.setFont(font)
         self.left_value.setText("")
         self.left_value.setObjectName("left_value")

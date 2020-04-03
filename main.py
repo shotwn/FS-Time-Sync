@@ -164,11 +164,11 @@ class FSTimeSync:
             # print(now)
             if bool(self.offset):
                 offsetted_dt = self.offset + now
-                self.gui.main_window_act(self.gui.main_window.ui.left_status.setText, f"{offsetted_dt.strftime('%H:%M | %d.%m.%Y')}")
+                self.gui.main_window_act(self.gui.main_window.ui.left_value.setText, f"{offsetted_dt.strftime('%H:%M | %d.%m.%Y')}")
             else:
-                self.gui.main_window_act(self.gui.main_window.ui.left_status.setText, "")
+                self.gui.main_window_act(self.gui.main_window.ui.left_value.setText, "")
 
-            self.gui.main_window_act(self.gui.main_window.ui.left_value.setText, str(self.offset))
+            self.gui.main_window_act(self.gui.main_window.ui.left_status.setText, str(self.offset))
             time.sleep(0.5)
 
     def sync_thread_runner(self):
@@ -261,11 +261,11 @@ class FSTimeSync:
 
                 print("DOING A ZULU TIME SYNC.")
 
+                self.time_offsets.write("DATE_YEAR", now.year)
+                self.time_offsets.write("DATE_MONTH", now.month)
+                self.time_offsets.write("DATE_DAY", now.day)
                 self.time_offsets.write("TIME_HOUR", now.hour)
                 self.time_offsets.write("TIME_MINUTE", now.minute)
-                self.time_offsets.write("DATE_DAY", now.day)
-                self.time_offsets.write("DATE_MONTH", now.month)
-                self.time_offsets.write("DATE_YEAR", now.year)
 
                 self.gui.remove_message(0, 1)  # Remove will sync message
                 self.gui.add_message(0, 2, "Last Sync: {:02d}:{:02d}:{:02d}z".format(now.hour, now.minute, now.second))
