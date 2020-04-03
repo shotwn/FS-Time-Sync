@@ -221,7 +221,7 @@ class FSTimeSync:
             self.mw_emit([self.gui.main_window.ui.sim_time_minute.setText, "{:02d}".format(data["TIME_MINUTE"])])
             self.mw_emit([self.gui.main_window.ui.sim_time_second.setText, "{:02d}".format(data["TIME_SECOND"])])
             self.mw_emit([self.gui.main_window.ui.sim_date.setText, "{:02d}.{:02d}.{}".format(data["DATE_DAY"], data["DATE_MONTH"], data["DATE_YEAR"])])
-            self.mw_emit([self.gui.main_window.ui.sim_time_second.setToolTip, "ε: ±{}s Δ: {:02f}s".format(30, delta)])
+            self.mw_emit([self.gui.main_window.ui.sim_time_second.setToolTip, "ε: ±{}s Δ: {}s".format(30, int(delta))])
             # print(data)
 
             time.sleep(1)
