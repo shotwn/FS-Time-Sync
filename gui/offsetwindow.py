@@ -94,7 +94,6 @@ class OffsetWindow(QDialog, GUICommon):
 
     def button_box_clicked(self, button):
         if self.ui.button_box.buttonRole(button) == self.ui.button_box.ButtonRole.ResetRole:
-            print("self.ui.button_box.buttonRole(button)")
             self.temp_offset = BasicTimeDelta()
             self.signals_disconnect()
             self.update_delta_selectors()
