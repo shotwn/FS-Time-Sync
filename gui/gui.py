@@ -97,9 +97,10 @@ class GUI:
         self.root.si.add_trigger(self.show)
 
         # Settings are triggered here.
-        if not self.root.settings.get("startup", "tray"):
+        if not self.root.settings.get("startup", "tray"):  # Start regularly or as tray icon
             self.main_window.show()
         else:
+            self.tray.showMessage("FS Time Sync", "FS Time Sync Started in Tray.")
             self.tray_actions["hide_show"].setText("Show")
             self.tray_actions["hide_show"].triggered.connect(self.show)
 
