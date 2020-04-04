@@ -81,6 +81,10 @@ class GUI:
         if reason == self.tray.ActivationReason.Trigger:
             self.show()
 
+    def single_instance_triggered(self):
+        self.tray.showMessage("FS Time Sync", "FS Time Sync is already running.")
+        self.show()
+
     def show(self):
         self.tray_actions["hide_show"].setText("Hide")
         self.tray_actions["hide_show"].triggered.connect(self.hide)
@@ -94,7 +98,7 @@ class GUI:
 
     def start(self):
         # Add single instance trigger.
-        self.root.si.add_trigger(self.show)
+        self.root.si.add_trigger(self.single_instance_triggered)
 
         # Settings are triggered here.
         if not self.root.settings.get("startup", "tray"):  # Start regularly or as tray icon
