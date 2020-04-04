@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'D:\Works\Dev\FSUTCSync\ui\mainwindow.ui',
 # licensing of 'D:\Works\Dev\FSUTCSync\ui\mainwindow.ui' applies.
 #
-# Created: Fri Apr  3 13:57:14 2020
+# Created: Sat Apr  4 17:58:33 2020
 #      by: pyside2-uic  running on PySide2 5.13.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -191,6 +191,11 @@ class Ui_MainWindow(object):
         self.right_status_2.setText("")
         self.right_status_2.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.right_status_2.setObjectName("right_status_2")
+        self.settings_button = QtWidgets.QToolButton(self.centralwidget)
+        self.settings_button.setGeometry(QtCore.QRect(299, 10, 16, 16))
+        self.settings_button.setCursor(QtCore.Qt.PointingHandCursor)
+        self.settings_button.setText("")
+        self.settings_button.setObjectName("settings_button")
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)

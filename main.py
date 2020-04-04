@@ -1,32 +1,24 @@
 import sys
 import time
 import socket
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import ntplib
 import threading
 import pyuipc
 
 from gui.gui import GUI
 from shotwn import BasicTimeDelta
+from shotwn import FlipFlop
+from shotwn.settings import Settings
+from shotwn.SingleInstance import SingleInstance
 
-
-class FlipFlop:
-    def __init__(self, to_flop, default=" "):
-        self.to_flop = to_flop
-        self.default = default
-        self.flop = True
-
-    def __str__(self):
-        return self.get()
-
-    def get(self):
-        to_return = self.default
-        if self.flop:
-            to_return = self.to_flop
-
-        self.flop = not self.flop
-
-        return to_return
+DEFAULT_SETTINGS = {
+    "minimize_to_tray": True,
+    "startup": {
+        "auto_sync": False,
+        "tray": False
+    }
+}
 
 
 class OffsetSet:
@@ -64,20 +56,25 @@ class FSSync:
         self.pyuipc_open = False
         self.opened_sim = "Prepar3D v4"
 
+    def reset(self):
+        self.offset_sets = []
+        self.close_pyuipc()
+
     def connect_pyuipc(self):
         if self.pyuipc_open:
             return self.pyuipc_open
 
         try:
             pyuipc.open(12)
-        except pyuipc.FSUIPCException as exc:
-            #print(exc)
+        except pyuipc.FSUIPCException as exc:  # noqa: F841
+            # print(exc)
             return None
 
         self.pyuipc_open = 12
         return True
 
     def close_pyuipc(self):
+        self.pyuipc_open = False
         pyuipc.close()
 
     def create_offset_set(self, offsets):
@@ -92,6 +89,8 @@ class FSSync:
 
 class FSTimeSync:
     def __init__(self):
+        self.si = SingleInstance(32092)
+        self.settings = Settings('settings.json', DEFAULT_SETTINGS)
         self.fs_sync = FSSync()
         self.gui = GUI(self)
         self.mw_emit = self.gui.main_window.act.emit  # TODO: Switch from mw_emit to mw_act
@@ -101,7 +100,7 @@ class FSTimeSync:
         self.sync_thread = None
         self.time_run = False
         self.time_thread = None
-        self.enable_live_sync = False
+        self.live_sync_enabled = False
         self.now_source = "S"
         self.ntp_client = ntplib.NTPClient()
         self.ntp_delta = None
@@ -173,40 +172,63 @@ class FSTimeSync:
 
     def toggle_live_sync(self):
         print("toggle live sync")
-        self.enable_live_sync = not self.enable_live_sync
-        if not self.enable_live_sync:
-            self.gui.remove_message(0, 1)  # Remove will sync message
-            self.mw_emit([self.gui.main_window.ui.live_button.setIcon, self.gui.icons["sync_disabled"]])
-            self.mw_emit([self.gui.main_window.ui.live_button.setToolTip, "Live Sync: Disabled"])
+        if not self.live_sync_enabled:
+            self.enable_live_sync()
         else:
-            self.mw_emit([self.gui.main_window.ui.live_button.setIcon, self.gui.icons["sync"]])
-            self.mw_emit([self.gui.main_window.ui.live_button.setToolTip, "Live Sync: Enabled"])
+            self.disable_live_sync()
 
-    def sync_thread_runner(self):
+    def disable_live_sync(self):
+        self.live_sync_enabled = False
+        self.gui.remove_message(0, 1)  # Remove will sync message
+        self.mw_emit([self.gui.main_window.ui.live_button.setIcon, self.gui.icons["sync_disabled"]])
+        self.mw_emit([self.gui.main_window.ui.live_button.setToolTip, "Live Sync: Disabled"])
+
+    def enable_live_sync(self):
+        self.live_sync_enabled = True
+        self.mw_emit([self.gui.main_window.ui.live_button.setIcon, self.gui.icons["sync"]])
+        self.mw_emit([self.gui.main_window.ui.live_button.setToolTip, "Live Sync: Enabled"])
+
+    def restart_sync_thread_runner(self, restart):
+        self.mw_act(self.gui.main_window.ui.sim_label.setText, 'Waiting Simulator...')
+        self.mw_act(self.gui.main_window.ui.sim_time_hour.setText, "")
+        self.mw_act(self.gui.main_window.ui.sim_time_minute.setText, "")
+        self.mw_act(self.gui.main_window.ui.sim_time_second.setText, "")
+        self.mw_act(self.gui.main_window.ui.sim_time_second.setToolTip, "")
+        self.mw_act(self.gui.main_window.ui.sim_time_seperator.setText, "")
+        self.mw_act(self.gui.main_window.ui.sim_date.setText, "")
+        self.fs_sync.reset()
+        time.sleep(10)  # Sleep, make sure FSUIPC exits completely.
+        self.sync_thread_runner(restart=restart + 1)
+
+    def sync_thread_runner(self, restart=0):
         # Est. FSUIPC connection.
         # Try every 10 seconds.
         self.sync_run = True
         while self.sync_run:
             if not self.fs_sync.connect_pyuipc():
-                #print(self.fs_sync.connect_pyuipc())
-                #print("Cannot connect FSUIPC.")
+                # print(self.fs_sync.connect_pyuipc())
+                # print("Cannot connect FSUIPC.")
                 time.sleep(10)
                 continue
-            self.mw_emit([self.gui.main_window.ui.sim_label.setText, self.fs_sync.opened_sim])
+            self.mw_act(self.gui.main_window.ui.sim_label.setText, self.fs_sync.opened_sim)
             break
 
-        if not self.time_offsets:
-            offsets = {
-                "TIME_SECOND": [0x023A, "b"],
-                "TIME_HOUR": [0x023B, "b"],
-                "TIME_MINUTE": [0x023C, "b"],
-                "DATE_DAY": [0x023D, "b"],
-                "DATE_MONTH": [0x0242, "b"],
-                "DATE_YEAR": [0x024A, "H"],
-            }
-            self.time_offsets = self.fs_sync.create_offset_set(offsets)
+        offsets = {
+            "TIME_SECOND": [0x023A, "b"],
+            "TIME_HOUR": [0x023B, "b"],
+            "TIME_MINUTE": [0x023C, "b"],
+            "DATE_DAY": [0x023D, "b"],
+            "DATE_MONTH": [0x0242, "b"],
+            "DATE_YEAR": [0x024A, "H"],
+        }
+        self.time_offsets = self.fs_sync.create_offset_set(offsets)
 
-        self.sync_routine_loop()
+        try:
+            self.sync_routine_loop()
+        except (pyuipc.FSUIPCException, SystemError) as exc:
+            if exc.errorCode == 12 or exc.errorCode == 13:
+                print(f"Catched PYUIPC error, will restart. Code:{exc.errorCode}")
+                self.restart_sync_thread_runner(restart=restart)
 
     def sync_routine_loop(self):
         two_dots = FlipFlop(":")
@@ -246,7 +268,7 @@ class FSTimeSync:
             time.sleep(0.5)
             return False
 
-        if self.enable_live_sync or force:
+        if self.live_sync_enabled or force:
             if not self.fs_sync.pyuipc_open:
                 return
 

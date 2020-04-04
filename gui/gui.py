@@ -1,6 +1,7 @@
 import os
 import sys
 
+from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PySide2.QtGui import QIcon
 
@@ -25,10 +26,13 @@ class GUI:
             "sync": QIcon(resource_path('icons/sync.png')),
             "sync_disabled": QIcon(resource_path('icons/sync_disabled.png')),
             "logo": QIcon(resource_path('icons/logo.png')),
+            "settings": QIcon(resource_path('icons/settings.png')),
+            "github": QIcon(resource_path('icons/github.png'))
         }
 
         self.main_window = MainWindow(self)
         self.offset_window = None
+        self.settings_window = None
         self.messages = [[], []]
         self.section_labels = [
             self.main_window.ui.right_status,
@@ -70,6 +74,7 @@ class GUI:
         self.tray_actions["hide_show"].triggered.connect(self.show)
         if self.offset_window:
             self.offset_window.close()
+        self.main_window.saveState()
         self.main_window.hide()
 
     def trayActivated(self, reason):
@@ -80,12 +85,27 @@ class GUI:
         self.tray_actions["hide_show"].setText("Hide")
         self.tray_actions["hide_show"].triggered.connect(self.hide)
         self.main_window.show()
+        # Brings window forward, but doesn't force it to stay active.
+        self.main_window.setWindowState(Qt.WindowActive)
+        self.main_window.setWindowState(Qt.WindowNoState)
 
     def exit(self):
         self.app.quit()
 
     def start(self):
-        self.main_window.show()
+        # Add single instance trigger.
+        self.root.si.add_trigger(self.show)
+
+        # Settings are triggered here.
+        if not self.root.settings.get("startup", "tray"):
+            self.main_window.show()
+        else:
+            self.tray_actions["hide_show"].setText("Show")
+            self.tray_actions["hide_show"].triggered.connect(self.show)
+
+        if self.root.settings.get("startup", "auto_sync"):
+            self.root.enable_live_sync()
+
         self.app.exec_()
 
     def add_message(self, section, code, msg):
@@ -114,6 +134,3 @@ class GUI:
             self.main_window.act.emit([self.section_labels[section].setText, self.messages[section][-1]["msg"]])
         else:
             self.main_window.act.emit([self.section_labels[section].setText, ""])
-
-    def show_offset_window(self):
-        return True

@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'D:\Works\Dev\FSUTCSync\ui\offsetwindow.ui',
 # licensing of 'D:\Works\Dev\FSUTCSync\ui\offsetwindow.ui' applies.
 #
-# Created: Fri Apr  3 13:57:14 2020
+# Created: Sat Apr  4 17:58:33 2020
 #      by: pyside2-uic  running on PySide2 5.13.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -19,6 +19,7 @@ class Ui_Dialog(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(Dialog.sizePolicy().hasHeightForWidth())
         Dialog.setSizePolicy(sizePolicy)
+        Dialog.setMinimumSize(QtCore.QSize(259, 180))
         Dialog.setMaximumSize(QtCore.QSize(259, 180))
         Dialog.setStyleSheet("QDialog {\n"
 "    background-color: #151515;\n"
