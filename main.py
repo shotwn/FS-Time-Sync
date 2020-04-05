@@ -242,7 +242,7 @@ class FSTimeSync:
             "TIME_MINUTE": [0x023C, "b"],
             "DATE_DAY": [0x023D, "b"],
             "DATE_MONTH": [0x0242, "b"],
-            "DATE_YEAR": [0x024A, "H"],
+            "DATE_YEAR": [0x0240, "H"],  # Fixed from local
         }
         self.time_offsets = self.fs_sync.create_offset_set(offsets)
 
@@ -281,6 +281,7 @@ class FSTimeSync:
 
         try:
             data = self.time_offsets.read()
+            print(data)
             now = self.offset + self.get_now()
             time_from_data = datetime(data["DATE_YEAR"], data["DATE_MONTH"], data["DATE_DAY"], data["TIME_HOUR"], data["TIME_MINUTE"], second=data["TIME_SECOND"])
             delta = (now - time_from_data).total_seconds()
