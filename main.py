@@ -89,7 +89,7 @@ class FSSync:
         sim_offset = self.create_offset_set({'SIM_VERSION': [0x3308, 'b']})
         result = sim_offset.read()
         self.pyuipc_open = result['SIM_VERSION']
-        self.opened_sim = SIMULATORS[self.pyuipc_open]
+        self.opened_sim = SIMULATORS.get(self.pyuipc_open, 'SIM_VERSION', f'Unknown Sim: {self.pyuipc_open}')
         return True
 
     def close_pyuipc(self):
