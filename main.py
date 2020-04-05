@@ -20,6 +20,22 @@ DEFAULT_SETTINGS = {
     }
 }
 
+SIMULATORS = [
+    "ANY",
+    "MFS 98",
+    "MFS 2000",
+    "CFS 2",
+    "CFS 1",
+    "Reserved",
+    "FS 2002",
+    "FS 2004",
+    "Flight Simulator X",
+    "ESP",
+    "Prepar3D",
+    "Flight Simulator X64",
+    "Prepar3D v4"
+]
+
 
 class OffsetSet:
     def __init__(self, offsets):
@@ -54,7 +70,7 @@ class FSSync:
     def __init__(self):
         self.offset_sets = []
         self.pyuipc_open = False
-        self.opened_sim = "Prepar3D v4"
+        self.opened_sim = None
 
     def reset(self):
         self.offset_sets = []
@@ -65,12 +81,15 @@ class FSSync:
             return self.pyuipc_open
 
         try:
-            pyuipc.open(12)
+            pyuipc.open(0)
         except pyuipc.FSUIPCException as exc:  # noqa: F841
-            # print(exc)
+            print(exc)
             return None
 
-        self.pyuipc_open = 12
+        sim_offset = self.create_offset_set({'SIM_VERSION': [0x3308, 'b']})
+        result = sim_offset.read()
+        self.pyuipc_open = result['SIM_VERSION']
+        self.opened_sim = SIMULATORS[self.pyuipc_open]
         return True
 
     def close_pyuipc(self):
