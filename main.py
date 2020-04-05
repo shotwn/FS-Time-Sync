@@ -1,7 +1,7 @@
 import sys
 import time
 import socket
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import ntplib
 import threading
 import pyuipc
@@ -35,6 +35,10 @@ SIMULATORS = [
     "Flight Simulator X64",
     "Prepar3D v4"
 ]
+
+SIMULATOR_XPLANE_ID = 100
+SIMULATOR_XPLANE = "X Plane"
+SIMULATOR_XPLANE_YEAR_DELTA = 7
 
 
 class OffsetSet:
@@ -86,13 +90,21 @@ class FSSync:
             print(exc)
             return None
 
-        sim_offset = self.create_offset_set({'SIM_VERSION': [0x3308, 'b']})
+        sim_offset = self.create_offset_set({
+            'SIM_VERSION': [0x3308, 'b'],
+            'IS_XPLANE': [0x6FFF, 'b']
+        })
         result = sim_offset.read()
-        self.pyuipc_open = result['SIM_VERSION']
-        try:
-            self.opened_sim = SIMULATORS[self.pyuipc_open]
-        except IndexError:
-            self.opened_sim = f'Unknown Sim: {self.pyuipc_open}'
+
+        if result['IS_XPLANE']:
+            self.pyuipc_open = SIMULATOR_XPLANE_ID
+            self.opened_sim = SIMULATOR_XPLANE
+        else:
+            self.pyuipc_open = result['SIM_VERSION']
+            try:
+                self.opened_sim = SIMULATORS[self.pyuipc_open]
+            except IndexError:
+                self.opened_sim = f'Unknown Sim: {self.pyuipc_open}'
 
         return True
 
@@ -244,6 +256,10 @@ class FSTimeSync:
             "DATE_MONTH": [0x0242, "b"],
             "DATE_YEAR": [0x0240, "H"],  # Fixed from local
         }
+
+        if self.fs_sync.pyuipc_open == SIMULATOR_XPLANE_ID:
+            offsets["DAY_OF_YEAR"] = [0x023E, "h"]
+
         self.time_offsets = self.fs_sync.create_offset_set(offsets)
 
         try:
@@ -262,12 +278,13 @@ class FSTimeSync:
 
             data = data_delta[0]
             delta = data_delta[1]
+            datetime = data_delta[2]
 
             self.mw_emit([self.gui.main_window.ui.sim_time_hour.setText, "{:02d}".format(data["TIME_HOUR"])])
             self.mw_emit([self.gui.main_window.ui.sim_time_seperator.setText, str(two_dots)])
             self.mw_emit([self.gui.main_window.ui.sim_time_minute.setText, "{:02d}".format(data["TIME_MINUTE"])])
             self.mw_emit([self.gui.main_window.ui.sim_time_second.setText, "{:02d}".format(data["TIME_SECOND"])])
-            self.mw_emit([self.gui.main_window.ui.sim_date.setText, "{:02d}.{:02d}.{}".format(data["DATE_DAY"], data["DATE_MONTH"], data["DATE_YEAR"])])
+            self.mw_emit([self.gui.main_window.ui.sim_date.setText, datetime.strftime('%d.%m.%Y')])
             self.mw_emit([self.gui.main_window.ui.sim_time_second.setToolTip, "ε: ±{}s Δ: {}s".format(30, int(delta))])
             # print(data)
 
@@ -281,9 +298,14 @@ class FSTimeSync:
 
         try:
             data = self.time_offsets.read()
-            print(data)
+            if self.fs_sync.pyuipc_open == SIMULATOR_XPLANE_ID:
+                data["DATE_YEAR"] += SIMULATOR_XPLANE_YEAR_DELTA
+                time_from_data = datetime(data["DATE_YEAR"], 1, 1, data["TIME_HOUR"], data["TIME_MINUTE"], second=data["TIME_SECOND"])
+                time_from_data = time_from_data + timedelta(days=data["DAY_OF_YEAR"])
+            else:
+                time_from_data = datetime(data["DATE_YEAR"], data["DATE_MONTH"], data["DATE_DAY"], data["TIME_HOUR"], data["TIME_MINUTE"], second=data["TIME_SECOND"])
+
             now = self.offset + self.get_now()
-            time_from_data = datetime(data["DATE_YEAR"], data["DATE_MONTH"], data["DATE_DAY"], data["TIME_HOUR"], data["TIME_MINUTE"], second=data["TIME_SECOND"])
             delta = (now - time_from_data).total_seconds()
         except ValueError as exc:
             # ValueError generally thrown when FSUIPC is reporting year out of range.
@@ -303,23 +325,29 @@ class FSTimeSync:
                 else:
                     if now.second > 3:
                         self.gui.add_message(0, 1, "Will Sync At: {:02d}:{:02d}z".format(now.hour, now.minute + 1))
-                        return [data, delta]
+                        return [data, delta, time_from_data]
 
                     self.time_offsets.write("TIME_SECOND", 0)
 
                 print("DOING A ZULU TIME SYNC.")
 
-                self.time_offsets.write("DATE_YEAR", now.year)
-                self.time_offsets.write("DATE_MONTH", now.month)
-                self.time_offsets.write("DATE_DAY", now.day)
-                self.time_offsets.write("TIME_HOUR", now.hour)
-                self.time_offsets.write("TIME_MINUTE", now.minute)
+                if self.fs_sync.pyuipc_open == SIMULATOR_XPLANE_ID:
+                    self.time_offsets.write("DATE_YEAR", now.year - SIMULATOR_XPLANE_YEAR_DELTA)
+                    self.time_offsets.write("DAY_OF_YEAR", int(now.strftime('%j')) - 1)
+                    self.time_offsets.write("TIME_HOUR", now.hour)
+                    self.time_offsets.write("TIME_MINUTE", now.minute)
+                else:
+                    self.time_offsets.write("DATE_YEAR", now.year)
+                    self.time_offsets.write("DATE_MONTH", now.month)
+                    self.time_offsets.write("DATE_DAY", now.day)
+                    self.time_offsets.write("TIME_HOUR", now.hour)
+                    self.time_offsets.write("TIME_MINUTE", now.minute)
 
                 self.gui.remove_message(0, 1)  # Remove will sync message
                 self.gui.add_message(0, 2, "Last Sync: {:02d}:{:02d}:{:02d}z".format(now.hour, now.minute, now.second))
-                return [self.time_offsets.read(), delta]  # Return fresh data
+                return [self.time_offsets.read(), delta, time_from_data]  # Return fresh data
 
-        return [data, delta]
+        return [data, delta, time_from_data]
 
 
 if __name__ == "__main__":
