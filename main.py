@@ -295,6 +295,8 @@ class FSTimeSync:
         Returns initial data if no sync.
         Returns new data if there has been sync.
         """
+        if not self.fs_sync.pyuipc_open:
+            return
 
         try:
             data = self.time_offsets.read()
