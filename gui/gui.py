@@ -54,6 +54,8 @@ class GUI:
         }
         """)
         self.tray_actions = {}
+        self.tray_actions["sync_now"] = menu.addAction("Sync Now")
+        self.tray_actions["sync_now"].triggered.connect(lambda: self.root.sync_sim(force=True))
         self.tray_actions["hide_show"] = menu.addAction("Hide")
         self.tray_actions["hide_show"].triggered.connect(self.hide)
         self.tray_actions["exit"] = menu.addAction("Exit")
